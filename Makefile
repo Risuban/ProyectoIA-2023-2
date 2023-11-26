@@ -1,26 +1,18 @@
-# Definir el compilador
-CXX=g++
+# Makefile
 
-# Definir las banderas de compilación
-CXXFLAGS=-std=c++17 -Wall
+# Define el compilador
+CC=gcc
 
-# Definir el nombre del ejecutable
-TARGET=programa
+# Define las opciones de compilación
+CFLAGS=-Wall -std=c++11 -lstdc++
 
-# Definir el archivo fuente
-SRC=main.cpp
+# Define el nombre del ejecutable
+TARGET=mi_programa
 
-# La primera regla es la que se ejecuta por defecto ("all").
-# Esta regla depende del TARGET, que es el nombre del ejecutable que queremos generar.
 all: $(TARGET)
 
-# Regla para generar el ejecutable.
-$(TARGET): $(SRC)
-	$(CXX) $(CXXFLAGS) $(SRC) -o $(TARGET)
+$(TARGET): main.cpp
+	$(CC) main.cpp $(CFLAGS) -o $(TARGET)
 
-# Regla para limpiar los archivos generados.
 clean:
 	rm -f $(TARGET)
-
-# Esta es una regla especial que indica que las reglas 'all' y 'clean' no dependen de archivos con esos nombres.
-.PHONY: all clean

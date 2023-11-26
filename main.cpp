@@ -8,6 +8,7 @@
 #include <cstdlib> // Para srand y rand
 #include <ctime>   // Para time
 #include <list>
+#include <chrono> // Para cronometraje
 
 using namespace std;
 
@@ -178,8 +179,6 @@ std::pair<std::vector<int>, std::pair<int, int>> generar_mejor_vecino(const std:
 
 
 
-
-
 std::vector<int> generar_ruta_aleatoria(int longitud, const std::vector<std::vector<int>>& tiempos_arcos) {
     std::vector<int> ruta;
     int intentos = 0;
@@ -187,12 +186,14 @@ std::vector<int> generar_ruta_aleatoria(int longitud, const std::vector<std::vec
 
     while (ruta.size() < longitud && intentos < max_intentos) {
         if (ruta.empty()) {
-            ruta.push_back(0); // Comenzar siempre en el nodo 0
+            // Elegir un nodo de inicio aleatorio
+            int nodo_inicio = rand() % tiempos_arcos.size();
+            ruta.push_back(nodo_inicio);
         } else {
             int ultimo_nodo = ruta.back();
             std::vector<int> candidatos;
-            
-            for (int i = 1; i < tiempos_arcos.size(); ++i) {
+
+            for (int i = 0; i < tiempos_arcos.size(); ++i) {
                 if (tiempos_arcos[ultimo_nodo][i] != -1 && std::find(ruta.begin(), ruta.end(), i) == ruta.end()) {
                     candidatos.push_back(i);
                 }
@@ -215,7 +216,6 @@ std::vector<int> generar_ruta_aleatoria(int longitud, const std::vector<std::vec
 
     return ruta;
 }
-
 
 
 std::vector<int> aplicar_busqueda_tabu(std::vector<int> ruta_actual, const Turista& turista, int iteraciones, int tamano_tabu) {
@@ -247,48 +247,99 @@ std::vector<int> aplicar_busqueda_tabu(std::vector<int> ruta_actual, const Turis
     return mejor_ruta;
 }
 
+struct EstadisticasTurista {
+    int valorizacion;
+    int tiempoUsado;
+    int tiempoRestante;
+};
+
+EstadisticasTurista calcularEstadisticas(const std::vector<int>& ruta, const Turista& turista) {
+    int tiempoUsado = 0;
+    int valorizacion = 0;
+
+    for (size_t i = 0; i < ruta.size() - 1; ++i) {
+        tiempoUsado += tiempos_arcos_globales[ruta[i]][ruta[i + 1]];
+        valorizacion += turista.valorizaciones_arcos[ruta[i]][ruta[i + 1]];
+    }
+
+    for (int nodo : ruta) {
+        tiempoUsado += tiempos_nodos_globales[nodo];
+        valorizacion += turista.valorizaciones_nodos[nodo];
+    }
+
+    int tiempoRestante = turista.tiempo_total_disponible - tiempoUsado;
+
+    return {valorizacion, tiempoUsado, tiempoRestante};
+}
 
 
-int main() {
+int main(int argc, char *argv[]) {
+    if (argc != 4) {
+        std::cerr << "Uso: " << argv[0] << " <archivo_tipo1> <archivo_tipo2> <numero_iteraciones_exploracion>" << std::endl;
+        return 1;
+    }
+
+    std::string archivo_tipo1 = argv[1];
+    std::string archivo_tipo2 = argv[2];
+    int numero_iteraciones_exploracion = std::stoi(argv[3]);
     // Inicialización del generador de números aleatorios
     srand(static_cast<unsigned>(time(nullptr)));
-
+    auto inicio = std::chrono::high_resolution_clock::now();
 
     leer_archivo_tipo_1("./Instances/tipo1/17_instancia.txt");
     leer_archivo_tipo_2("./Instances/tipo2/5us_17_instancia.txt");
 
-    // Asignar un tiempo máximo global
-    tiempo_maximo_global = 6000;
     int tamano_tabu = 50;
     int iteraciones = 5000;
+    int numero_iteraciones_exploracion = 10; // Número de veces que se repite el proceso de exploración
 
-    // Generar rutas aleatorias y calcular sus ganancias
-    std::vector<std::vector<int>> rutas;
-    std::vector<int> ganancias;
+    // Inicializar contenedores para las mejores rutas y ganancias por turista
+    std::vector<std::vector<int>> mejor_ruta_por_turista(turistas.size());
+    std::vector<int> mejor_ganancia_por_turista(turistas.size(), INT_MIN);
 
-    int n = tiempos_nodos_globales.size(); 
-    for (int longitud = 2; longitud < n; ++longitud) {
-        std::vector<int> ruta = generar_ruta_aleatoria(longitud, tiempos_arcos_globales);
-        rutas.push_back(ruta);
+    for (int iteracion = 0; iteracion < numero_iteraciones_exploracion; ++iteracion) {
+        // Generar nuevas rutas aleatorias
+        std::vector<std::vector<int>> rutas;
+        int n = tiempos_nodos_globales.size();
+        for (int longitud = 2; longitud < n; ++longitud) {
+            rutas.push_back(generar_ruta_aleatoria(longitud, tiempos_arcos_globales));
+        }
 
-        int ganancia = calcular_ganancia_total(ruta); // Calcula la ganancia total para la ruta
-        ganancias.push_back(ganancia);
-    }
+        // Aplicar búsqueda tabú para cada turista con las nuevas rutas
+        for (size_t idx_turista = 0; idx_turista < turistas.size(); ++idx_turista) {
+            const auto& turista = turistas[idx_turista];
 
-    // Aplicar búsqueda tabú a cada ruta
-    for (int i = 0; i < rutas.size(); ++i) {
-        for (const auto& turista : turistas) {
-            std::vector<int> ruta_mejorada = aplicar_busqueda_tabu(rutas[i], turista, iteraciones, tamano_tabu);
-            rutas[i] = ruta_mejorada; // Actualizar la ruta con la versión mejorada
+            for (const auto& ruta : rutas) {
+                std::vector<int> ruta_mejorada = aplicar_busqueda_tabu(ruta, turista, iteraciones, tamano_tabu);
+                int ganancia_mejorada = evaluar_ganancia(ruta_mejorada, turista);
 
-            int ganancia_mejorada = calcular_ganancia_total(ruta_mejorada); // Calcular la ganancia para la ruta mejorada
-            ganancias[i] = ganancia_mejorada; // Actualizar la ganancia con el nuevo valor
+                if (ganancia_mejorada > mejor_ganancia_por_turista[idx_turista]) {
+                    mejor_ruta_por_turista[idx_turista] = ruta_mejorada;
+                    mejor_ganancia_por_turista[idx_turista] = ganancia_mejorada;
+                }
+            }
         }
     }
 
-    // Imprimir los resultados
-    for (int i = 0; i < rutas.size(); ++i) {
-        std::cout << "Ganancia para la ruta " << i << ": " << ganancias[i] << std::endl;
+    // Medir el tiempo de ejecución
+    auto fin = std::chrono::high_resolution_clock::now();
+    auto duracion = std::chrono::duration_cast<std::chrono::milliseconds>(fin - inicio).count();
+    std::cout << "Tiempo de ejecucion: " << duracion << " milisegundos." << std::endl;
+
+    // Imprimir los resultados para cada turista
+    for (size_t idx_turista = 0; idx_turista < turistas.size(); ++idx_turista) {
+        std::cout << "Turista " << idx_turista << ":" << std::endl;
+        if (mejor_ganancia_por_turista[idx_turista] == INT_MIN) {
+            std::cout << "No se pudo obtener una ruta apropiada." << std::endl;
+        } else {
+            std::cout << "Mejor ganancia: " << mejor_ganancia_por_turista[idx_turista] << std::endl;
+            std::cout << "Mejor ruta: ";
+            for (int nodo : mejor_ruta_por_turista[idx_turista]) {
+                std::cout << nodo << " ";
+            }
+            std::cout << std::endl;
+        }
+        std::cout << std::endl;
     }
     return 0;
 }
