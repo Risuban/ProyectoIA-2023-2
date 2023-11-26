@@ -291,8 +291,8 @@ int main(int argc, char *argv[]) {
 
     int tamano_tabu = 50;
     int iteraciones = 5000;
-    int numero_iteraciones_exploracion = 10; // Número de veces que se repite el proceso de exploración
 
+    
     // Inicializar contenedores para las mejores rutas y ganancias por turista
     std::vector<std::vector<int>> mejor_ruta_por_turista(turistas.size());
     std::vector<int> mejor_ganancia_por_turista(turistas.size(), INT_MIN);
