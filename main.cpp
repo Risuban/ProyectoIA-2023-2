@@ -2,14 +2,13 @@
 #include <vector>
 #include <fstream>  
 #include <sstream>  
-#include <algorithm> // para std::find
+#include <algorithm> 
 #include <string>
 #include <climits> 
-#include <cstdlib> // Para srand y rand
-#include <ctime>   // Para time
+#include <cstdlib> 
+#include <ctime>   
 #include <list>
-#include <chrono> // Para cronometraje
-
+#include <chrono> 
 using namespace std;
 
 struct Turista {
@@ -210,10 +209,6 @@ std::vector<int> generar_ruta_aleatoria(int longitud, const std::vector<std::vec
         }
     }
 
-    if (ruta.size() < longitud) {
-        // Manejar el caso en que no se pudo generar una ruta válida
-    }
-
     return ruta;
 }
 
@@ -286,13 +281,13 @@ int main(int argc, char *argv[]) {
     srand(static_cast<unsigned>(time(nullptr)));
     auto inicio = std::chrono::high_resolution_clock::now();
 
-    leer_archivo_tipo_1("./Instances/tipo1/17_instancia.txt");
-    leer_archivo_tipo_2("./Instances/tipo2/5us_17_instancia.txt");
+    leer_archivo_tipo_1(archivo_tipo1);
+    leer_archivo_tipo_2(archivo_tipo2);
 
     int tamano_tabu = 50;
-    int iteraciones = 5000;
+    int iteraciones = 100;
 
-    
+
     // Inicializar contenedores para las mejores rutas y ganancias por turista
     std::vector<std::vector<int>> mejor_ruta_por_turista(turistas.size());
     std::vector<int> mejor_ganancia_por_turista(turistas.size(), INT_MIN);

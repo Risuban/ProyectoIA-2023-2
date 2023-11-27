@@ -1,14 +1,23 @@
 # ProyectoIA-2023-2
 
-
-
-Como es el avance no implemento todavia la manera de correr bien el makefile, de momento está utilizando el archivo 17_instancia.txt con un archivo de prueba 5us_17_instancia.txt que son los primeros 5 usuarios de 40us_17_instancia.txt
-
 Para crear el ejecutable se abre una consola en la dirección correspondiente y se utiliza el comando 
-
 
 ```
 make
 ```
 
-Para depuración el codigo muestra las estadias y cambios de nodos. Ademas si un turista excede su tiempo máximo, mostrará INTMIN o -2147483648.
+Una vez el ejecutable sea creado, se debe ejecutar  con 
+
+```
+.\mi_programa.exe <ruta archivo tipo 1> <ruta archivo tipo 2> <n de restarts> 
+```
+
+en windows o para linux
+
+```
+mi_programa.exe <ruta archivo tipo 1> <ruta archivo tipo 2> <n de restarts> 
+```
+
+Sobre 15 restarts el codigo comenzara a tomar más de 1 minuto en ejecutar, pero tendrá mejores resultados.
+
+Además dentro del código el número de iteraciones y el largo de la lista tabú están hardcodeados pero se pueden cambiar, ambos están dentro de main en las lineas 292 y 293. Se recomienda no usar mas de 5000 iteraciones.
